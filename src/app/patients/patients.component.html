@@ -1,0 +1,203 @@
+<div class="patients-container">
+  <header class="header">
+    <div class="header-content">
+      <h1>Patient Records</h1>
+      <div class="header-actions">
+        <button class="export-btn" (click)="exportToExcel()">Export to Excel</button>
+        <button class="back-btn" (click)="goBack()">Back to Dashboard</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="patients-section">
+      <div class="section-header">
+        <div>
+          <h2>Patient List</h2>
+          <p>Total Patients: {{ patients.length }} | Filtered: {{ filteredPatients.length }}</p>
+        </div>
+        <div class="header-controls">
+          <!-- Search Box -->
+          <div class="search-group">
+            <label for="patientSearch">Search Patient:</label>
+            <div class="search-container">
+              <input 
+                type="text" 
+                id="patientSearch" 
+                [(ngModel)]="searchTerm" 
+                (input)="onSearchInput()" 
+                placeholder="Type patient name..."
+                name="patientSearch"
+                autocomplete="off"
+              />
+              <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()" title="Clear search">✖</button>
+              
+              <!-- Search Dropdown -->
+              <div *ngIf="showSearchDropdown" class="search-dropdown">
+                <div 
+                  *ngFor="let patient of searchResults" 
+                  class="search-result-item"
+                  (click)="selectSearchResult(patient)"
+                >
+                  <strong>{{ patient.Name }}</strong>
+                  <span class="medical-id">{{ patient.MedicalRecordId }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label for="doctorFilter">Filter by Doctor:</label>
+            <select id="doctorFilter" [(ngModel)]="selectedDoctor" (change)="filterByDoctor()" name="doctorFilter">
+              <option value="">All Doctors</option>
+              <option *ngFor="let doctor of allDoctors" [value]="doctor">{{ doctor }}</option>
+            </select>
+          </div>
+          <button class="add-btn" (click)="openAddForm()" title="Add Patient">➕ Add Patient</button>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">Loading patients...</div>
+
+      <div *ngIf="!loading && patients.length > 0" class="table-container">
+        <table class="patients-table">
+          <thead>
+            <tr>
+              <th>MR ID</th>
+              <th>Attending Doctor</th>
+              <th>Patient Name</th>
+              <th>Age</th>
+              <th>Phone Number</th>
+              <th>Address</th>
+              <th>Last Visit</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let patient of filteredPatients" (click)="viewPatientDetail(patient)" class="clickable-row">
+              <td><strong>{{ patient.MedicalRecordId }}</strong></td>
+              <td>{{ patient.AttendingDoctor }}</td>
+              <td>{{ patient.Name }}</td>
+              <td>{{ patient.Age }}</td>
+              <td>{{ patient.PhoneNumber }}</td>
+              <td>{{ patient.Address }}</td>
+              <td>{{ patient.LastVisit }}</td>
+              <td class="actions">
+                <button class="edit-btn" (click)="openEditForm(patient); $event.stopPropagation()" title="Edit">✏️</button>
+                <button class="delete-btn" (click)="deletePatient(patient); $event.stopPropagation()" title="Delete">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && patients.length === 0" class="no-data">
+        No patients found. Click "Add Patient" to create a new record.
+      </div>
+    </div>
+  </div>
+
+  <!-- Patient Form Modal -->
+  <div class="modal" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingPatient ? 'Edit Patient' : 'Add New Patient' }}</h2>
+        <button class="close-btn" (click)="closeForm()">&times;</button>
+      </div>
+      
+      <form (ngSubmit)="savePatient()" class="patient-form">
+        <div class="form-group" *ngIf="editingPatient">
+          <label for="medicalRecordId">MR ID</label>
+          <input 
+            type="text" 
+            id="medicalRecordId" 
+            [(ngModel)]="formData.MedicalRecordId" 
+            name="medicalRecordId"
+            readonly
+            disabled
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="name">Name *</label>
+          <input 
+            type="text" 
+            id="name" 
+            [(ngModel)]="formData.Name" 
+            name="name"
+            placeholder="Enter patient name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="age">Age *</label>
+          <input 
+            type="number" 
+            id="age" 
+            [(ngModel)]="formData.Age" 
+            name="age"
+            placeholder="Enter age"
+            required
+            min="0"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="phoneNumber">Phone Number *</label>
+          <input 
+            type="tel" 
+            id="phoneNumber" 
+            [(ngModel)]="formData.PhoneNumber" 
+            name="phoneNumber"
+            placeholder="Enter phone number"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="address">Address *</label>
+          <textarea 
+            id="address" 
+            [(ngModel)]="formData.Address" 
+            name="address"
+            placeholder="Enter address"
+            rows="3"
+            required
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="lastVisit">Last Visit *</label>
+          <input 
+            type="date" 
+            id="lastVisit" 
+            [value]="dateToISO(formData.LastVisit)" 
+            (change)="onDateChange($event)"
+            name="lastVisit"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="attendingDoctor">Attending Doctor *</label>
+          <select 
+            id="attendingDoctor" 
+            [(ngModel)]="formData.AttendingDoctor" 
+            name="attendingDoctor"
+            required
+          >
+            <option value="">-- Select Doctor --</option>
+            <option value="Siva">Siva</option>
+            <option value="Mahalakshmi">Mahalakshmi</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeForm()">Cancel</button>
+          <button type="submit" class="save-btn">{{ editingPatient ? 'Update' : 'Add' }} Patient</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

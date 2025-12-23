@@ -1,0 +1,257 @@
+<div class="patient-detail-container">
+  <header class="header">
+    <div class="header-content">
+      <h1>Patient Details</h1>
+      <div class="header-actions">
+        <button class="back-btn" (click)="goBack()">Back to Patients</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="patient-info-card" *ngIf="patient">
+      <div class="patient-header">
+        <h2>{{ patient.Name }}</h2>
+        <span class="medical-record-badge">{{ patient.MedicalRecordId }}</span>
+      </div>
+      <div class="info-grid">
+        <div class="info-item">
+          <span class="label">Age:</span>
+          <span class="value">{{ patient.Age }} years</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Phone Number:</span>
+          <span class="value">{{ patient.PhoneNumber }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Address:</span>
+          <span class="value">{{ patient.Address }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Last Visit:</span>
+          <span class="value">{{ patient.LastVisit }}</span>
+        </div>
+        <div class="info-item">
+          <span class="label">Attending Doctor:</span>
+          <span class="value">{{ patient.AttendingDoctor }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Saved Records Grid -->
+    <div class="saved-records-section" *ngIf="patientDetails.length > 0">
+      <h3>Medical Records History</h3>
+      <div class="records-grid">
+        <div class="record-card" *ngFor="let detail of patientDetails">
+          <div class="record-header">
+            <div>
+              <h4>Record #{{ detail.id }}</h4>
+              <span class="record-date">Added: {{ detail.dateAdded }}</span>
+            </div>
+            <div class="record-actions">
+              <button class="print-record-btn" (click)="printDetail(detail)" title="Print">🖨️</button>
+              <button class="edit-record-btn" (click)="editDetail(detail)" title="Edit">✏️</button>
+              <button class="delete-record-btn" (click)="deleteDetail(detail)" title="Delete">🗑️</button>
+            </div>
+          </div>
+          
+          <div class="record-content">
+            <div class="record-field">
+              <strong>Problem:</strong>
+              <p>{{ detail.problem }}</p>
+            </div>
+            
+            <div class="record-field">
+              <strong>Doctor Comments:</strong>
+              <p>{{ detail.doctorComments }}</p>
+            </div>
+            
+            <div class="record-field" *ngIf="detail.additionalAppointments">
+              <strong>Additional Appointments:</strong>
+              <p>{{ detail.additionalAppointments }}</p>
+            </div>
+            
+            <div class="record-field" *ngIf="detail.medicines && detail.medicines.length > 0">
+              <strong>Medicines:</strong>
+              <div class="medicines-summary">
+                <div class="medicine-summary-item" *ngFor="let medicine of detail.medicines">
+                  <span class="medicine-name">{{ medicine.drugName }}</span>
+                  <span class="medicine-info">{{ medicine.provider }} | Qty: {{ medicine.quantity }} | {{ medicine.timing }} - {{ medicine.frequency }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-form-section">
+      <div class="form-title">
+        <h3>{{ editingDetail ? 'Edit Medical Record' : 'Add New Medical Record' }}</h3>
+        <button type="button" class="cancel-edit-btn" *ngIf="editingDetail" (click)="cancelEdit()">
+          Cancel Edit
+        </button>
+      </div>
+      
+      <form #detailForm="ngForm" (ngSubmit)="saveDetails()" class="detail-form">
+        <div class="form-section">
+          <h3>Medical Information</h3>
+          
+          <div class="form-group">
+            <label for="problem">Problem *</label>
+            <textarea 
+              id="problem" 
+              [(ngModel)]="patientDetail.problem" 
+              name="problem"
+              placeholder="Describe the patient's problem"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="doctorComments">Doctor Comments *</label>
+            <textarea 
+              id="doctorComments" 
+              [(ngModel)]="patientDetail.doctorComments" 
+              name="doctorComments"
+              placeholder="Enter doctor's comments and observations"
+              rows="4"
+              required
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="additionalAppointments">Additional Appointments</label>
+            <textarea 
+              id="additionalAppointments" 
+              [(ngModel)]="patientDetail.additionalAppointments" 
+              name="additionalAppointments"
+              placeholder="Enter follow-up appointment details or recommendations"
+              rows="3"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="form-section">
+          <div class="medicines-header">
+            <h3>Medicines *</h3>
+            <button type="button" class="add-medicine-btn" (click)="addMedicine()">
+              ➕ Add Medicine
+            </button>
+          </div>
+
+          <div class="medicines-list" *ngIf="patientDetail.medicines.length > 0">
+            <div class="medicine-item" *ngFor="let medicine of patientDetail.medicines; let i = index">
+              <div class="medicine-header">
+                <h4>Medicine {{ i + 1 }}</h4>
+                <button type="button" class="remove-medicine-btn" (click)="removeMedicine(i)" title="Remove">
+                  🗑️
+                </button>
+              </div>
+              
+              <div class="medicine-fields">
+                <div class="form-group">
+                  <label [for]="'provider' + i">Provider *</label>
+                  <select 
+                    [id]="'provider' + i"
+                    [(ngModel)]="medicine.provider" 
+                    [name]="'provider' + i"
+                    (change)="onProviderChangeMedicine(i)"
+                    required
+                  >
+                    <option value="">Select Provider</option>
+                    <option *ngFor="let provider of providers" [value]="provider">{{ provider }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label [for]="'drugName' + i">Drug Name *</label>
+                  <select 
+                    [id]="'drugName' + i"
+                    [(ngModel)]="medicine.drugName" 
+                    [name]="'drugName' + i"
+                    required
+                  >
+                    <option value="">Select Drug Name</option>
+                    <option *ngFor="let drug of filteredDrugNames[i] || drugNames" [value]="drug">{{ drug }}</option>
+                  </select>
+                  <div *ngIf="medicine.drugName && getMedicineAvailability(medicine.drugName)" 
+                       class="availability-badge"
+                       [ngClass]="{'available': getMedicineAvailability(medicine.drugName) === 'Yes', 'unavailable': getMedicineAvailability(medicine.drugName) === 'No'}">
+                    {{ getMedicineAvailability(medicine.drugName) === 'Yes' ? '✓ Available' : '⚠ Not Available' }}
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label [for]="'quantity' + i">Quantity *</label>
+                  <input 
+                    type="number" 
+                    [id]="'quantity' + i"
+                    [(ngModel)]="medicine.quantity" 
+                    [name]="'quantity' + i"
+                    placeholder="Enter quantity"
+                    required
+                    min="1"
+                  />
+                  <div *ngIf="medicine.drugName && medicine.quantity > 0" class="quantity-info">
+                    <div class="available-quantity">Available: {{ getAvailableQuantity(medicine.drugName) }}</div>
+                    <div *ngIf="!isQuantityAvailable(medicine.drugName, medicine.quantity)" 
+                         class="availability-badge unavailable">
+                      ⚠ Requested quantity not available (Available: {{ getAvailableQuantity(medicine.drugName) }})
+                    </div>
+                    <div *ngIf="isQuantityAvailable(medicine.drugName, medicine.quantity) && medicine.quantity > 0" 
+                         class="availability-badge available">
+                      ✓ Quantity available
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label [for]="'timing' + i">Timing *</label>
+                  <select 
+                    [id]="'timing' + i"
+                    [(ngModel)]="medicine.timing" 
+                    [name]="'timing' + i"
+                    required
+                  >
+                    <option value="">Select Timing</option>
+                    <option *ngFor="let time of timingOptions" [value]="time">{{ time }}</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label [for]="'frequency' + i">Frequency *</label>
+                  <input 
+                    type="text" 
+                    [id]="'frequency' + i"
+                    [(ngModel)]="medicine.frequency" 
+                    [name]="'frequency' + i"
+                    placeholder="e.g., Twice daily"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="no-medicines" *ngIf="patientDetail.medicines.length === 0">
+            <span class="required-warning">⚠️ At least one medicine must be added *</span>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="goBack()">Back to Patients</button>
+          <button 
+            type="submit" 
+            class="save-btn" 
+            [disabled]="!detailForm.form.valid || patientDetail.medicines.length === 0 || !areMedicinesValid()"
+            [title]="getSubmitButtonTitle(detailForm.form.valid)"
+          >
+            {{ editingDetail ? 'Update Record' : 'Save Record' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

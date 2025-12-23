@@ -1,0 +1,290 @@
+<div class="appointments-container">
+  <header class="header">
+    <div class="header-content">
+      <h1>Appointments</h1>
+      <div class="header-actions">
+        <button class="export-btn" (click)="exportToExcel()">Export to Excel</button>
+        <button class="back-btn" (click)="goBack()">Back to Dashboard</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="appointments-section">
+      <div class="section-header">
+        <div>
+          <h2>Appointment List</h2>
+          <p>Today: {{ todayAppointments.length }} | Future: {{ futureAppointments.length }} | Old: {{ oldAppointments.length }}</p>
+        </div>
+        <div class="header-controls">
+          <!-- Search Box -->
+          <div class="search-group">
+            <label for="patientSearch">Search Patient:</label>
+            <div class="search-container">
+              <input 
+                type="text" 
+                id="patientSearch" 
+                [(ngModel)]="searchTerm" 
+                (input)="onSearchInput()" 
+                placeholder="Type patient name..."
+                name="patientSearch"
+                autocomplete="off"
+              />
+              <button *ngIf="searchTerm" class="clear-search-btn" (click)="clearSearch()" title="Clear search">✖</button>
+              
+              <!-- Search Dropdown -->
+              <div *ngIf="showSearchDropdown" class="search-dropdown">
+                <div 
+                  *ngFor="let patient of searchResults" 
+                  class="search-result-item"
+                  (click)="selectSearchResult(patient)"
+                >
+                  <strong>{{ patient.Name }}</strong>
+                  <span class="medical-id">{{ patient.MedicalRecordId }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-group">
+            <label for="doctorFilter">Filter by Doctor:</label>
+            <select id="doctorFilter" [(ngModel)]="selectedDoctor" (change)="filterByDoctor()" name="doctorFilter">
+              <option value="">All Doctors</option>
+              <option *ngFor="let doctor of allDoctors" [value]="doctor">{{ doctor }}</option>
+            </select>
+          </div>
+          <button class="old-appointments-btn" (click)="toggleOldAppointments()" *ngIf="oldAppointments.length > 0">
+            {{ showOldAppointments ? '🔼 Hide Old' : '🔽 Show Old' }}
+          </button>
+          <button class="add-btn" (click)="openAddForm()" title="Add Appointment">➕ Add Appointment</button>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">Loading appointments...</div>
+
+      <div *ngIf="!loading && appointments.length > 0" class="table-container">
+        <table class="appointments-table">
+          <thead>
+            <tr>              <th>MR ID</th>              <th>Attending Doctor</th>
+              <th>Patient Name</th>
+              <th>Age</th>
+              <th>Phone Number</th>
+              <th>Address</th>
+              <th>Appointment Date</th>
+              <th>Time</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Today's Appointments -->
+            <tr class="category-header" *ngIf="todayAppointments.length > 0">
+              <td colspan="9" class="category-title">📅 Today's Appointments</td>
+            </tr>
+            <tr *ngFor="let appointment of todayAppointments" class="today-row">
+              <td><strong>{{ appointment.MedicalRecordId }}</strong></td>
+              <td>{{ appointment.AttendingDoctor }}</td>
+              <td>{{ appointment.PatientName }}</td>
+              <td>{{ appointment.Age }}</td>
+              <td>{{ appointment.PhoneNumber }}</td>
+              <td>{{ appointment.Address }}</td>
+              <td>{{ appointment.AppointmentDate }}</td>
+              <td>{{ convertTo12HourFormat(appointment.AppointmentTime) }}</td>
+              <td class="actions">
+                <button class="edit-btn" (click)="openEditForm(appointment)" title="Edit">✏️</button>
+                <button class="delete-btn" (click)="deleteAppointment(appointment)" title="Delete">🗑️</button>
+              </td>
+            </tr>
+            
+            <!-- Future Appointments -->
+            <tr class="category-header" *ngIf="futureAppointments.length > 0">
+              <td colspan="9" class="category-title">🔜 Future Appointments</td>
+            </tr>
+            <tr *ngFor="let appointment of futureAppointments" class="future-row">
+              <td><strong>{{ appointment.MedicalRecordId }}</strong></td>
+              <td>{{ appointment.AttendingDoctor }}</td>
+              <td>{{ appointment.PatientName }}</td>
+              <td>{{ appointment.Age }}</td>
+              <td>{{ appointment.PhoneNumber }}</td>
+              <td>{{ appointment.Address }}</td>
+              <td>{{ appointment.AppointmentDate }}</td>
+              <td>{{ convertTo12HourFormat(appointment.AppointmentTime) }}</td>
+              <td class="actions">
+                <button class="edit-btn" (click)="openEditForm(appointment)" title="Edit">✏️</button>
+                <button class="delete-btn" (click)="deleteAppointment(appointment)" title="Delete">🗑️</button>
+              </td>
+            </tr>
+            
+            <!-- Old Appointments -->
+            <tr class="category-header" *ngIf="showOldAppointments && oldAppointments.length > 0">
+              <td colspan="9" class="category-title">📁 Past Appointments</td>
+            </tr>
+            <ng-container *ngIf="showOldAppointments">
+              <tr *ngFor="let appointment of oldAppointments" class="old-row">
+                <td><strong>{{ appointment.MedicalRecordId }}</strong></td>
+                <td>{{ appointment.AttendingDoctor }}</td>
+                <td>{{ appointment.PatientName }}</td>
+                <td>{{ appointment.Age }}</td>
+                <td>{{ appointment.PhoneNumber }}</td>
+                <td>{{ appointment.Address }}</td>
+                <td>{{ appointment.AppointmentDate }}</td>
+                <td>{{ convertTo12HourFormat(appointment.AppointmentTime) }}</td>
+                <td class="actions">
+                  <button class="edit-btn" (click)="openEditForm(appointment)" title="Edit">✏️</button>
+                  <button class="delete-btn" (click)="deleteAppointment(appointment)" title="Delete">🗑️</button>
+                </td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && appointments.length === 0" class="no-data">
+        No appointments found. Click "Add Appointment" to create a new record.
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Form Modal -->
+  <div class="modal" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingAppointment ? 'Edit Appointment' : 'Add New Appointment' }}</h2>
+        <button class="close-btn" (click)="closeForm()">&times;</button>
+      </div>
+      
+      <form (ngSubmit)="saveAppointment()" class="appointment-form">
+        <div class="form-group" *ngIf="!editingAppointment">
+          <label for="modalPatientSearch">Select Patient *</label>
+          <div class="searchable-select-container">
+            <input 
+              type="text" 
+              id="modalPatientSearch" 
+              [(ngModel)]="modalSearchTerm" 
+              (input)="onModalSearchInput()" 
+              (focus)="showModalDropdown = true"
+              placeholder="Search and select patient..."
+              name="modalPatientSearch"
+              autocomplete="off"
+              required
+            />
+            <button type="button" *ngIf="modalSearchTerm" class="clear-modal-search-btn" (click)="clearModalSearch()" title="Clear search">✖</button>
+            
+            <!-- Searchable Dropdown -->
+            <div *ngIf="showModalDropdown && filteredModalPatients.length > 0" class="searchable-dropdown">
+              <div 
+                *ngFor="let patient of filteredModalPatients" 
+                class="searchable-dropdown-item"
+                (click)="selectModalPatient(patient)"
+              >
+                <strong>{{ patient.MedicalRecordId }}</strong> - {{ patient.Name }}
+                <span class="patient-age">Age: {{ patient.Age }}</span>
+              </div>
+            </div>
+            
+            <div *ngIf="showModalDropdown && filteredModalPatients.length === 0 && modalSearchTerm" class="no-results">
+              No patients found
+            </div>
+          </div>
+          <small class="patient-count">{{ filteredModalPatients.length }} patient(s) available</small>
+        </div>
+
+        <div class="form-group" *ngIf="editingAppointment || selectedPatient">
+          <label>MR ID</label>
+          <input 
+            type="text" 
+            [(ngModel)]="formData.MedicalRecordId" 
+            name="medicalRecordId"
+            readonly
+            class="readonly-field"
+          />
+        </div>
+
+        <div class="form-group" *ngIf="editingAppointment || selectedPatient">
+          <label>Patient Name</label>
+          <input 
+            type="text" 
+            [(ngModel)]="formData.PatientName" 
+            name="patientName"
+            readonly
+            class="readonly-field"
+          />
+        </div>
+
+        <div class="form-group" *ngIf="editingAppointment || selectedPatient">
+          <label>Age</label>
+          <input 
+            type="number" 
+            [(ngModel)]="formData.Age" 
+            name="age"
+            readonly
+            class="readonly-field"
+          />
+        </div>
+
+        <div class="form-group" *ngIf="editingAppointment || selectedPatient">
+          <label>Phone Number *</label>
+          <input 
+            type="tel" 
+            [(ngModel)]="formData.PhoneNumber" 
+            name="phoneNumber"
+            placeholder="Enter phone number"
+            required
+          />
+        </div>
+
+        <div class="form-group" *ngIf="editingAppointment || selectedPatient">
+          <label>Address</label>
+          <textarea 
+            [(ngModel)]="formData.Address" 
+            name="address"
+            rows="2"
+            readonly
+            class="readonly-field"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="appointmentDate">Appointment Date *</label>
+          <input 
+            type="date" 
+            id="appointmentDate" 
+            [value]="dateToISO(formData.AppointmentDate)" 
+            (change)="onDateChange($event)"
+            name="appointmentDate"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="appointmentTime">Appointment Time *</label>
+          <input 
+            type="time" 
+            id="appointmentTime" 
+            [(ngModel)]="formData.AppointmentTime" 
+            name="appointmentTime"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="attendingDoctor">Attending Doctor *</label>
+          <select 
+            id="attendingDoctor" 
+            [(ngModel)]="formData.AttendingDoctor" 
+            name="attendingDoctor"
+            required
+          >
+            <option value="">-- Select Doctor --</option>
+            <option value="Siva">Siva</option>
+            <option value="Mahalakshmi">Mahalakshmi</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeForm()">Cancel</button>
+          <button type="submit" class="save-btn">{{ editingAppointment ? 'Update' : 'Add' }} Appointment</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

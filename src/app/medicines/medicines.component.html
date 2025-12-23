@@ -1,0 +1,153 @@
+<div class="medicines-container">
+  <header class="header">
+    <div class="header-content">
+      <h1>Medicines Inventory</h1>
+      <div class="header-actions">
+        <button class="export-btn" (click)="exportToExcel()">Export to Excel</button>
+        <button class="back-btn" (click)="goBack()">Back to Dashboard</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="main-content">
+    <div class="medicines-section">
+      <div class="section-header">
+        <div>
+          <h2>Medicine List</h2>
+          <p>Total Medicines: {{ medicines.length }}</p>
+        </div>
+        <div class="header-controls">
+          <button class="add-btn" (click)="openAddForm()" title="Add Medicine">➕ Add Medicine</button>
+        </div>
+      </div>
+
+      <div *ngIf="loading" class="loading">Loading medicines...</div>
+
+      <div *ngIf="!loading && medicines.length > 0" class="table-container">
+        <table class="medicines-table">
+          <thead>
+            <tr>
+              <th>Provider</th>
+              <th>Drug Name</th>
+              <th>Quantity</th>
+              <th>Tabs Per Sheet</th>
+              <th>Available</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let medicine of medicines">
+              <td>{{ medicine.Provider }}</td>
+              <td>{{ medicine.DrugName }}</td>
+              <td>{{ medicine.Quantity }}</td>
+              <td>{{ medicine.TabsPerSheet }}</td>
+              <td>
+                <span [style.color]="medicine.Available === 'Yes' ? '#4caf50' : '#f44336'"
+                      [style.font-weight]="'600'">
+                  {{ medicine.Available }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="edit-btn" (click)="openEditForm(medicine)" title="Edit">✏️</button>
+                <button class="delete-btn" (click)="deleteMedicine(medicine)" title="Delete">🗑️</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="!loading && medicines.length === 0" class="no-data">
+        No medicines found. Click "Add Medicine" to create a new record.
+      </div>
+    </div>
+  </div>
+
+  <!-- Medicine Form Modal -->
+  <div class="modal" *ngIf="showForm" (click)="closeForm()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>{{ editingMedicine ? 'Edit Medicine' : 'Add New Medicine' }}</h2>
+        <button class="close-btn" (click)="closeForm()">&times;</button>
+      </div>
+      
+      <form (ngSubmit)="saveMedicine()" class="medicine-form">
+        <div class="form-group">
+          <label for="provider">Provider *</label>
+          <input 
+            type="text"
+            id="provider" 
+            [(ngModel)]="formData.Provider" 
+            name="provider"
+            placeholder="Enter or select provider"
+            list="providerList"
+            (change)="onProviderChange()"
+            required
+          />
+          <datalist id="providerList">
+            <option *ngFor="let provider of providers" [value]="provider"></option>
+          </datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="drugName">Drug Name *</label>
+          <input 
+            type="text"
+            id="drugName" 
+            [(ngModel)]="formData.DrugName" 
+            name="drugName"
+            placeholder="Enter or select drug name"
+            list="drugNameList"
+            required
+          />
+          <datalist id="drugNameList">
+            <option *ngFor="let drug of filteredDrugNames" [value]="drug"></option>
+          </datalist>
+        </div>
+
+        <div class="form-group">
+          <label for="quantity">Quantity *</label>
+          <input 
+            type="number" 
+            id="quantity" 
+            [(ngModel)]="formData.Quantity" 
+            name="quantity"
+            placeholder="Enter quantity"
+            required
+            min="0"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="tabsPerSheet">Tabs Per Sheet *</label>
+          <input 
+            type="number" 
+            id="tabsPerSheet" 
+            [(ngModel)]="formData.TabsPerSheet" 
+            name="tabsPerSheet"
+            placeholder="Enter tabs per sheet"
+            required
+            min="1"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="available">Available *</label>
+          <select 
+            id="available" 
+            [(ngModel)]="formData.Available" 
+            name="available"
+            required
+          >
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="cancel-btn" (click)="closeForm()">Cancel</button>
+          <button type="submit" class="save-btn">{{ editingMedicine ? 'Update' : 'Save' }}</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

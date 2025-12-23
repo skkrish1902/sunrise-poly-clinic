@@ -1,0 +1,30 @@
+<div class="home-container">
+  <header class="header">
+    <div class="header-content">
+      <h1>Sunrise Poly Clinic</h1>
+      <div class="user-section">
+        <p class="logged-in-user">Logged in as: <strong>{{ username }}</strong></p>
+        <button class="logout-btn" (click)="logout()">Logout</button>
+      </div>
+    </div>
+  </header>
+  
+  <div class="main-content">
+    <div class="dashboard-cards">
+      <div class="card" (click)="navigateToPatients()">
+        <h3>Patients</h3>
+        <p>Manage patient records</p>
+      </div>
+      
+      <div class="card" (click)="navigateToAppointments()">
+        <h3>Appointments</h3>
+        <p>Schedule and view appointments</p>
+      </div>
+      
+      <div class="card" (click)="navigateToMedicines()">
+        <h3>Medicines</h3>
+        <p>Manage medicine inventory</p>
+      </div>
+    </div>
+  </div>
+</div>
