@@ -6,7 +6,7 @@
     "ng": "ng",
     "start": "ng serve",
     "server": "node server.js",
-    "dev": "concurrently \"npm run server\" \"npm start\"",
+    "dev": "concurrently \"NODE_OPTIONS=--no-deprecation npm run server\" \"npm start\"",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
@@ -20,8 +20,10 @@
     "@angular/platform-browser": "^13.0.0",
     "@angular/platform-browser-dynamic": "^13.0.0",
     "@angular/router": "^13.0.0",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
     "rxjs": "~6.6.0",
-    "xlsx": "^0.20.2",
+    "xlsx": "^0.18.5",
     "zone.js": "~0.11.4"
   },
   "devDependencies": {
